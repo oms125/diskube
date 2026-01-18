@@ -1,5 +1,5 @@
 /*
-Copyright 2026.
+Copyright 2025.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,6 +23,10 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type BotChannels struct {
+	LogChannel string `json:"log,omitempty"`
+}
+
 // BotSpec defines the desired state of Bot
 type BotSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -30,9 +34,9 @@ type BotSpec struct {
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// foo is an example field of Bot. Edit bot_types.go to remove/update
-	// +optional
-	Foo *string `json:"foo,omitempty"`
+	// +required
+	Token    string      `json:"token"`
+	Channels BotChannels `json:"channels,omitempty"`
 }
 
 // BotStatus defines the observed state of Bot.
@@ -61,13 +65,13 @@ type BotStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Bot is the Schema for the bots API
+// Bot is the Schema for the Bots API
 type Bot struct {
 	metav1.TypeMeta `json:",inline"`
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
 
 	// spec defines the desired state of Bot
 	// +required
@@ -75,7 +79,7 @@ type Bot struct {
 
 	// status defines the observed state of Bot
 	// +optional
-	Status BotStatus `json:"status,omitzero"`
+	Status BotStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -83,7 +87,7 @@ type Bot struct {
 // BotList contains a list of Bot
 type BotList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitzero"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Bot `json:"items"`
 }
 

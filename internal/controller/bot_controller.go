@@ -1,5 +1,5 @@
 /*
-Copyright 2026.
+Copyright 2025.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,32 +24,56 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	diskubev1 "diskube.furyng.com/kubebuilder/api/v1"
+	configv1 "diskube.furyng.com/kubebuilder/api/v1"
+	"diskube.furyng.com/kubebuilder/internal/bot"
+	"github.com/bwmarrin/discordgo"
 )
 
-// BotReconciler reconciles a Bot object
+// DiscordReconciler reconciles a Discord object
 type BotReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme     *runtime.Scheme
+	BotManager *bot.BotManager
 }
 
-// +kubebuilder:rbac:groups=diskube.furyng.com,resources=bots,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=diskube.furyng.com,resources=bots/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=diskube.furyng.com,resources=bots/finalizers,verbs=update
+// +kubebuilder:rbac:groups=config.ritsec.cloud,resources=discords,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=config.ritsec.cloud,resources=discords/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=config.ritsec.cloud,resources=discords/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the Bot object against the actual cluster state, and then
+// the Discord object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.22.4/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.22.1/pkg/reconcile
 func (r *BotReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = logf.FromContext(ctx)
+	logger := logf.FromContext(ctx)
 
-	// TODO(user): your logic here
+	var discList configv1.BotList
+
+	err := r.List(ctx, &discList)
+	logger.Error(err, "Failed to fetch API list")
+
+	discToken := discList.Items[0].Spec.Token
+
+	discSession, err := discordgo.New("Bot " + discToken)
+	logger.Error(err, "Failed to start Discord bot session")
+
+	discSession.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages
+
+	err = discSession.Open()
+	logger.Error(err, "Failed to open Discord bot session")
+
+	err = r.BotManager.SetSession(discSession)
+	logger.Error(err, "Failed to set Discord bot Session")
+
+	r.BotManager.SetLogChannel(discList.Items[0].Spec.Channels.LogChannel)
+
+	err = r.BotManager.SendMessage("1", "Error Logging Test")
+	logger.Error(err, "Intentional Error; Error Logging Successful")
 
 	return ctrl.Result{}, nil
 }
@@ -57,7 +81,7 @@ func (r *BotReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 // SetupWithManager sets up the controller with the Manager.
 func (r *BotReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&diskubev1.Bot{}).
-		Named("bot").
+		For(&configv1.Bot{}).
+		Named("discord").
 		Complete(r)
 }
