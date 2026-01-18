@@ -1,0 +1,9 @@
+apiVersion: diskube.furyng.com/v1
+kind: Bot
+metadata:
+  labels:
+    app.kubernetes.io/name: diskube
+    app.kubernetes.io/managed-by: kustomize
+  name: bot-sample
+spec:
+  # TODO(user): Add fields here
